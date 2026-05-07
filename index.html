@@ -530,8 +530,8 @@
             <div class="modal-header"><h3 class="modal-title">New Trade</h3><button class="modal-close" onclick="closeModal('addTrade')">✕</button></div>
             <div class="form-row"><div class="form-group"><label class="form-label">Pair</label><input type="text" class="form-input" placeholder="EUR/USD"></div><div class="form-group"><label class="form-label">Direction</label><select class="form-input" id="tradeDir"><option value="long">Long</option><option value="short">Short</option></select></div></div>
             <div class="form-row"><div class="form-group"><label class="form-label">Entry Price</label><input type="number" step="0.00001" class="form-input" id="tradeEntry" placeholder="0.00000" oninput="calcTrade()"></div><div class="form-group"><label class="form-label">Exit Price</label><input type="number" step="0.00001" class="form-input" id="tradeExit" placeholder="0.00000" oninput="calcTrade()"></div></div>
-            <div class="form-row"><div class="form-group"><label class="form-label">Stop Loss</label><input type="number" step="0.00001" class="form-input" placeholder="0.00000"></div><div class="form-group"><label class="form-label">טייק פרופיט</label><input type="number" step="0.00001" class="form-input" placeholder="0.00000"></div></div>
-            <div class="form-row"><div class="form-group"><label class="form-label">Position Size (lots)</label><input type="number" step="0.01" class="form-input" id="tradeLots" placeholder="0.01" oninput="calcTrade()"></div><div class="form-group"><label class="form-label">Profit/Loss (אוטומטי)</label><input type="text" class="form-input" id="tradePnL" placeholder="$0" readonly style="background:var(--success-light);font-weight:600;color:var(--success)"></div></div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Stop Loss</label><input type="number" step="0.00001" class="form-input" placeholder="0.00000"></div><div class="form-group"><label class="form-label"take profit</label><input type="number" step="0.00001" class="form-input" placeholder="0.00000"></div></div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Position Size (lots)</label><input type="number" step="0.01" class="form-input" id="tradeLots" placeholder="0.01" oninput="calcTrade()"></div><div class="form-group"><label class="form-label">Profit/Loss</label><input type="text" class="form-input" id="tradePnL" placeholder="$0" readonly style="background:var(--success-light);font-weight:600;color:var(--success)"></div></div>
             <div class="btn-row"><button class="btn btn-secondary" onclick="closeModal('addTrade')">Cancel</button><button class="btn btn-success" onclick="saveTrade()">Save Trade</button></div>
         </div>
     </div>
@@ -948,13 +948,13 @@
                 return;
             }
             
-            var hebrewMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-            
-            var csv = '\uFEFF'; // BOM for Hebrew
-            csv += 'Monthly Report - Trader Journal\n';
-            csv += 'Month: ' + months[now.getMonth()] + ' ' + now.getFullYear() + '\n';
-            csv += 'Export Date: ' + now.toLocaleDateString('en-US') + '\n\n';
-            csv += 'Date,Time,Balance,P/L,Percent\n';
+var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+var csv = ''; // הסרנו את ה-BOM של העברית כי הכל באנגלית עכשיו
+csv += 'Monthly Report - Trader Journal\n';
+csv += 'Month: ' + months[now.getMonth()] + ' ' + now.getFullYear() + '\n';
+csv += 'Export Date: ' + now.toLocaleDateString('en-US') + '\n\n';
+csv += 'Date,Time,Balance,P/L,Percent\n';
             
             for (var i = 0; i < monthBalances.length; i++) {
                 var entry = monthBalances[i];
@@ -1035,12 +1035,12 @@
         }
         // ========== END DELETE/RESET FUNCTIONS ==========
         
-        const hebrewDays=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        const hebrewMonths=['January','February','March','April','May','June','July','August','September','October','November','December'];
-        const today=new Date();
-        document.getElementById('currentDate').textContent=`${days[today.getDay()]}, ${today.getDate()} ${months[today.getMonth()]}`;
-        document.getElementById('noteDate').value=today.toISOString().split('T')[0];
+const today = new Date(); // השורה הזו חייבת להופיע קודם!
+const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+document.getElementById('currentDate').textContent=`${days[today.getDay()]}, ${today.getDate()} ${months[today.getMonth()]}`;
+document.getElementById('noteDate').value=today.toISOString().split('T')[0];
         function generateCalendar(year,month){
             const grid=document.getElementById('calendarGrid');
             const headers=[...grid.querySelectorAll('.calendar-day-header')];
@@ -1058,43 +1058,76 @@
                 }
             }
             
-            for(let i=0;i<firstDay;i++){const e=document.createElement('div');e.className='calendar-day empty';grid.appendChild(e)}
-            for(let day=1;day<=daysInMonth;day++){
+// Generate empty spaces for the first days of the month
+            for(let i=0; i<firstDay; i++){
+                const e=document.createElement('div');
+                e.className='calendar-day empty';
+                grid.appendChild(e);
+            }
+
+            // Generate the days of the month
+            for(let day=1; day<=daysInMonth; day++){
                 const el=document.createElement('div');
-                const dow=new Date(year,month,day).getDay();
+                const dow=new Date(year, month, day).getDay();
                 el.className='calendar-day';
                 el.textContent=day;
-                if(dow===6)el.classList.add('shabbat');
-                if(day===today.getDate()&&month===today.getMonth()&&year===today.getFullYear())el.classList.add('today');
                 
-                // Check if this date has news - format date properly
+                // Styling for weekends and today
+                if(dow===6) el.classList.add('shabbat');
+                if(day===today.getDate() && month===today.getMonth() && year===today.getFullYear()) el.classList.add('today');
+                
+                // Format date key for news (YYYY-MM-DD)
                 var mm = String(month + 1).padStart(2, '0');
                 var dd = String(day).padStart(2, '0');
                 var dateKey = year + '-' + mm + '-' + dd;
-                if(newsDates[dateKey]) el.classList.add('has-news');
                 
+                // Mark days that have news items
+                if(typeof newsDates !== 'undefined' && newsDates[dateKey]) {
+                    el.classList.add('has-news');
+                }
+                
+                // CLICK ACTION: This makes the days clickable
                 el.onclick=function(){
                     document.querySelectorAll('.calendar-day').forEach(d=>d.classList.remove('selected'));
                     this.classList.add('selected');
-                    document.getElementById('selectedDateLabel').textContent=day + ' ' + months[month] + ' ' + year;
-                    // Set selected date for news and open modal
+                    
+                    // Update label using the English months array
+                    document.getElementById('selectedDateLabel').textContent = day + ' ' + months[month] + ' ' + year;
+                    
+                    // Set selected date and open the news modal
                     selectedNewsDate = dateKey;
-                    document.getElementById('newsModalDate').textContent = '📅 ' + day + ' ' + months[month] + ' ' + year;
-                    renderNewsForDate(dateKey);
-                    openModal('news');
+                    const modalDateLabel = document.getElementById('newsModalDate');
+                    if(modalDateLabel) {
+                        modalDateLabel.textContent = '📅 ' + day + ' ' + months[month] + ' ' + year;
+                    }
+                    
+                    if(typeof renderNewsForDate === 'function') {
+                        renderNewsForDate(dateKey);
+                    }
+                    if(typeof openModal === 'function') {
+                        openModal('news');
+                    }
                 };
                 grid.appendChild(el);
             }
         }
         
         var selectedNewsDate = '';
-        generateCalendar(2026,0);
+        
+        // Initialize calendar with the fixed "months" variable
+        if(typeof months !== 'undefined') {
+            generateCalendar(2026, 0);
+        }
 
+        // Handle month selection clicks
         document.querySelectorAll('.month-item').forEach(item=>{
-            item.addEventListener('click',function(){
+            item.addEventListener('click', function(){
                 document.querySelectorAll('.month-item').forEach(i=>i.classList.remove('active'));
                 this.classList.add('active');
-                generateCalendar(2026,parseInt(this.dataset.month));
+                var monthIndex = parseInt(this.dataset.month);
+                if(!isNaN(monthIndex)) {
+                    generateCalendar(2026, monthIndex);
+                }
             });
         });
 
